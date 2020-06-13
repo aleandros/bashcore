@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# shellcheck source=./bashcore
+. "$(dirname "${BASH_SOURCE[0]}")/lib/core.bash"
+
+usage() {
+  cat << EOF >&2
+bashcore -- Manage tasks related to the bashcore library (such as library loading and installation)
+
+Usage: bashcore [OPTIONS] COMMAND [ARGUMENTS...]
+
+Commands:
+  load [NAME]   Loads NAME library from bashcore, if available. If NAME is not provided loads
+                all available libraries. Since functions cannot be exported to caller, the resulting
+                STDOUT from this command should be passed to the "eval" command in the caller script.
+  help          Print this message
+EOF
+}
+
+case "$1" in
+  load)
+    if [ -z "$2" ] ; then
+      find "$(dirname "${BASH_SOURCE[0]}")/lib" -type f -name "*.bash" | while read -r item ; do
+        echo ". $item"
+      done
+    else
+      echo ". $(dirname "${BASH_SOURCE[0]}")/lib/${2}.bash"
+    fi
+    ;;
+  help)
+    usage
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
