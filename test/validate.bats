@@ -68,11 +68,6 @@ eval "$(bashcore load validate)"
   [ "$status" = "0" ]
 }
 
-@test "validate.string when no specification is given" {
-  run validate.string "blbl"
-  [ "$status" = "0" ]
-}
-
 @test "validate.string when it passes regex specification" {
   run validate.string "omg" o.{2}
   [ "$status" = "0" ]

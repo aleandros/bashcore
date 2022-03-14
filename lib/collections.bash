@@ -5,7 +5,7 @@ eval "$(bashcore load strings)"
 # Default field delimiter for every entry in a collection.
 BC_COLLECTIONS_FIELD_DELIMITER=":"
 # Default entry delimiter for separating elements in a collection.
-BC_COLLECTIONS_ENTRY_DELIMITER="%"
+BC_COLLECTIONS_ENTRY_DELIMITER="@"
 
 # Creates a new hash value. Note that hashes are internally stored using
 # a simple text based representation (which is directly serializable to disk
@@ -47,8 +47,8 @@ collections.hash.add() {
   local encoded_key
 
   if collections.hash._is_encoded "$hash" ; then
-    encoded_key=$(strings.base64_encode "$key")
-    encoded_value=$(strings.base64_encode "$value")
+    encoded_key=$(strings.url_encode "$key")
+    encoded_value=$(strings.url_encode "$value")
   elif [[ "$key" =~ [$BC_COLLECTIONS_ENTRY_DELIMITER$BC_COLLECTIONS_FIELD_DELIMITER] ]] || \
        [[ "$value" =~ [$BC_COLLECTIONS_ENTRY_DELIMITER$BC_COLLECTIONS_FIELD_DELIMITER] ]] ; then
     return 1
@@ -94,11 +94,22 @@ collections.hash.get() {
   found_entry="$(echo -n "$hash" | tr "$BC_COLLECTIONS_ENTRY_DELIMITER" "\n" |grep "$target" | tail -n 1)"
 
   if [ -n "$found_entry" ] ; then
-    strings.base64_decode "${found_entry#$target}"
+    strings.url_decode "${found_entry#$target}"
     return_code=0
   fi
 
   return $return_code
+}
+
+# Given a hash, stream to STDOUT key-value pairs, one per line,
+# with the key separated from the value via space.
+#
+# Beware that this function only will work correctly if both keys and values
+# contain no whitespace.
+collections.hash.iterate() {
+  local hash=$1
+
+  return 0  
 }
 
 collections.hash._search_target() {
@@ -107,7 +118,7 @@ collections.hash._search_target() {
   local encoded_key
 
   if collections.hash._is_encoded "$hash" ; then
-    encoded_key=$(strings.base64_encode "$key")
+    encoded_key=$(strings.url_encode "$key")
   else
     encoded_key=$key
   fi
@@ -117,7 +128,7 @@ collections.hash._search_target() {
 
 collections.hash._is_encoded() {
   local hash=$1
-  if echo "$hash" | grep -E "^ENCODED_HASH" &>/dev/null ; then
+  if strings.starts_with "$hash" ENCODED_HASH ; then
     return 0
   else
     return 1
